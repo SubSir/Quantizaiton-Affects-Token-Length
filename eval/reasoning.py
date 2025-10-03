@@ -13,7 +13,7 @@ temperature = 0.0
 
 def eval(model_name, task_name):
     num_gpus = torch.cuda.device_count()
-    llm = LLM(model=model_name, tensor_parallel_size=num_gpus)
+    llm = LLM(model=model_name, tensor_parallel_size=num_gpus, gpu_memory_utilization=0.9)
     sampling_params = SamplingParams(
         temperature=temperature,
         max_tokens=max_new_tokens,
@@ -42,36 +42,33 @@ def eval(model_name, task_name):
 
     print(f"Loaded {len(tasks)} tasks")
 
-    batch_size = 32
     results = []
-
     total_output_len = 0
     max_len_count = 0
-    for i in tqdm(range(0, len(tasks), batch_size), desc="Evaluating tasks"):
-        batch_tasks = tasks[i:i + batch_size]
-        prompts = [task["prompt"] for task in batch_tasks]
+    prompts = [task["prompt"] for task in tasks]
+    outputs = llm.generate(prompts, sampling_params)
+    total_output_len = 0
+    max_len_count = 0
+    results = []
 
-        outputs = llm.generate(prompts, sampling_params)
+    for task, output in tqdm(zip(tasks, outputs), total=len(tasks), desc="Processing outputs"):
+        output_text = output.outputs[0].text
+        prompt_len = len(output.prompt_token_ids)
+        completion_len = len(output.outputs[0].token_ids)
+        total_len = prompt_len + completion_len
 
-        for j, task in enumerate(batch_tasks):
-            output_text = outputs[j].outputs[0].text
-            prompt_len = len(outputs[j].prompt_token_ids)
-            completion_len = len(outputs[j].outputs[0].token_ids)
-            total_len = prompt_len + completion_len
-
-            result = {
-                "id": task["id"],
-                "prompt": task["prompt"],
-                "output": output_text,
-                "prompt_tokens": prompt_len,
-                "completion_tokens": completion_len,
-                "total_tokens": total_len,
-            }
-            total_output_len += completion_len
-            if completion_len == max_new_tokens:
-                max_len_count += 1
-            results.append(result)
-
+        result = {
+            "id": task["id"],
+            "prompt": task["prompt"],
+            "output": output_text,
+            "prompt_tokens": prompt_len,
+            "completion_tokens": completion_len,
+            "total_tokens": total_len,
+        }
+        total_output_len += completion_len
+        if completion_len == max_new_tokens:
+            max_len_count += 1
+        results.append(result)
 
     os.makedirs("results", exist_ok=True)
     out_file = f"results/{model_name.split('/')[-1]}_{task_name}.jsonl"
