@@ -4,6 +4,8 @@ from torch import nn
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import os
 import csv
+import torch.distributed as dist
+import gc
 
 def get_wikitext2(tokenizer):
     from datasets import load_dataset
@@ -13,6 +15,17 @@ def get_wikitext2(tokenizer):
     return testenc
 
 def eval(model_name):
+    csv_file = "ppl_summary.csv"
+    model_short_name = model_name.split('/')[-1]
+
+    if os.path.isfile(csv_file):
+        with open(csv_file, mode='r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row.get("model_name") == model_short_name:
+                    print(f"Already evaluated PPL for model: {model_name}. Skipping.")
+                    return 
+                
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForCausalLM.from_pretrained(model_name, device_map="auto")
     model.seqlen = 2048
@@ -42,7 +55,6 @@ def eval(model_name):
     ppl = torch.exp(torch.stack(nlls).sum() / (nsamples * model.seqlen))
     print(ppl.item())    
 
-    csv_file = "ppl_summary.csv"
     file_exists = os.path.isfile(csv_file)
 
     with open(csv_file, mode='a', newline='', encoding='utf-8') as f:
@@ -52,3 +64,7 @@ def eval(model_name):
         writer.writerow([model_name.split('/')[-1], ppl.item()])
 
     print(f"Appended summary to {csv_file}")
+
+    del model
+    gc.collect()
+    torch.cuda.empty_cache()
