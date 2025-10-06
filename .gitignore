@@ -2,3 +2,5 @@ __pycache__/
 results/
 *.csv
 *.log
+results_evaluated/
+results_postprocessed_judged/

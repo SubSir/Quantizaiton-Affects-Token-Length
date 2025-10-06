@@ -21,6 +21,18 @@ Perplexity evaluated on **WikiText-2**. Lower is better.
 
 > **Note**: It might be strange that w4g128's ppl is lower than w4g64's—perhaps this is accidental. I have double-checked the setting to ensure that I didn't mix them up.
 
+### Reasoning tasks accuracy
+
+| Model                         | Task    | origin | w3g64 | w3g128 | w4g64 | w4g128 |
+| ----------------------------- | ------- | ------ | ----- | ------ | ----- | ------ |
+| DeepSeek-R1-Distill-Qwen-1.5B | AIME90  | 12.22  | 3.33  | 1.11   | 5.56  | 7.78   |
+|                               | MATH500 | 37.40  | 14.60 | 10.80  | 36.80 | 40.20  |
+| DeepSeek-R1-Distill-Qwen-7B   | AIME90  | 30.00  | 25.56 | 18.89  | 37.78 | 33.33  |
+|                               | GSM8K   | 82.26  | 79.83 | 72.86  | 80.29 | 79.45  |
+|                               | MATH500 | 78.60  | 72.20 | 72.80  | 78.80 | 75.20  |
+
+> **Note**: Evaluating DeepSeek-R1-Distill-Qwen-1.5B on GSM8K is time-consuming (approximately 9 hours on a single A100), and I expect the results to be similar to those of the 7B version.
+
 ### Output Length on Reasoning Tasks
 
 Total completion tokens generated across different reasoning benchmarks.  
@@ -28,13 +40,12 @@ Total completion tokens generated across different reasoning benchmarks.
 
 #### DeepSeek-R1-Distill-Qwen-1.5B
 
-| Task   | origin    | w3g64     | w3g128    | w4g64     | w4g128    |
-| ------ | --------- | --------- | --------- | --------- | --------- |
-| AIME90 | 2,480,721 | 2,651,688 | 2,174,313 | 2,714,639 | 2,584,694 |
+| Task    | origin     | w3g64      | w3g128     | w4g64      | w4g128     |
+| ------- | ---------- | ---------- | ---------- | ---------- | ---------- |
+| AIME90  | 2,480,721  | 2,651,688  | 2,174,313  | 2,714,639  | 2,584,694  |
+| MATH500 | 10,720,210 | 14,467,647 | 13,149,910 | 11,382,077 | 11,032,043 |
 
 ---
-
-> **Note**: Other tasks like GSM8K or MATH500 may take too long to run (GSM8K takes about 9 hours on a single A100), and I expect the results would be similar to those of DeepSeek-R1-Distill-Qwen-7B.
 
 #### DeepSeek-R1-Distill-Qwen-7B
 
@@ -53,6 +64,7 @@ Number of samples that reached the **32,768-token output limit**, indicating pot
 | Model                         | Task    | origin | w3g64 | w3g128 | w4g64 | w4g128 |
 | ----------------------------- | ------- | ------ | ----- | ------ | ----- | ------ |
 | DeepSeek-R1-Distill-Qwen-1.5B | AIME90  | 72     | 64    | 50     | 79    | 72     |
+|                               | MATH500 | 279    | 354   | 287    | 315   | 305    |
 | DeepSeek-R1-Distill-Qwen-7B   | AIME90  | 53     | 62    | 65     | 46    | 58     |
 |                               | GSM8K   | 108    | 246   | 415    | 152   | 204    |
 |                               | MATH500 | 72     | 136   | 163    | 70    | 106    |
@@ -71,6 +83,19 @@ As an example, the output length distribution for **DeepSeek-R1-Distill-Qwen-7B 
 ![Output length distribution for DeepSeek-R1-Distill-Qwen-7B-w4g64 on GSM8K](png/DeepSeek-R1-Distill-Qwen-7B-w4g64_gsm8k.png)
 
 > **Note**: The complete set of distribution plots for all models and configurations can be found in the `png/` folder.
+
+### Comparison of Commonly Correct Answers
+
+We identify tasks that are **correctly answered by all model variants**—including the original and all quantized versions—of **DeepSeek-R1-Distill-Qwen**.  
+
+For the **7B** version, we find **677** such tasks on **GSM8K** and **221** such tasks on **MATH500**. And for the **1.5B** version (or on benchmarks like AIME90), the number of consistently correct tasks is **six or fewer**, indicating insufficient overlap for reliable analysis.
+
+The table below reports the **total number of tokens generated** on these consistently correct tasks under different quantization configurations for the 7B model:
+
+| Task    | origin  | w3g64     | w3g128    | w4g64   | w4g128    |
+| ------- | ------- | --------- | --------- | ------- | --------- |
+| GSM8K   | 921,149 | 1,838,998 | 3,192,450 | 972,254 | 1,077,985 |
+| MATH500 | 466,966 | 630,414   | 852,229   | 346,735 | 537,924   |
 
 ### Conclusion
 
